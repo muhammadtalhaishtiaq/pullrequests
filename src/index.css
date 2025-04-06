@@ -1,0 +1,87 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 13%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 142 76% 36%;
+    --primary-foreground: 355 100% 100%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 32% 20%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 224 76% 48%;
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html, body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  code {
+    @apply font-mono;
+  }
+  
+  .glass-card {
+    @apply bg-card/90 backdrop-blur-sm border border-border/50;
+  }
+  
+  .code-block {
+    @apply bg-code rounded-md p-4 font-mono text-sm overflow-x-auto;
+  }
+  
+  .code-line {
+    @apply block whitespace-pre;
+  }
+  
+  .code-highlight {
+    @apply bg-code-highlight rounded-md;
+  }
+  
+  .score-badge {
+    @apply rounded-full text-white font-medium text-xs px-2.5 py-0.5;
+  }
+  
+  .score-high {
+    @apply bg-success;
+  }
+  
+  .score-medium {
+    @apply bg-warning;
+  }
+  
+  .score-low {
+    @apply bg-danger;
+  }
+}
