@@ -32,11 +32,11 @@ const Footer = () => {
                 Features
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link to="/pricing" className="text-muted-foreground hover:text-foreground">
                 Pricing
               </Link>
-            </li>
+            </li> */}
             <li>
               <Link to="/docs" className="text-muted-foreground hover:text-foreground">
                 Documentation
