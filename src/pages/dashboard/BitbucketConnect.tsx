@@ -1,50 +1,123 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 const BitbucketConnect = () => {
   const [clientId, setClientId] = useState('');
   const [clientSecret, setClientSecret] = useState('');
-  const [isConnected, setIsConnected] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const handleConnect = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchCredentials = async () => {
+      if (!user) {
+        setFetching(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('bitbucket_credentials')
+          .select('client_id, client_secret')
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) {
+          if (error.code === 'PGRST116') { // No rows returned
+            // No credentials found, which is fine
+            setClientId('');
+            setClientSecret('');
+          } else {
+            throw error;
+          }
+        } else if (data) {
+          setClientId(data.client_id);
+          setClientSecret(data.client_secret);
+        }
+      } catch (error) {
+        console.error('Error fetching credentials:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load Bitbucket credentials",
+          variant: "destructive"
+        });
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchCredentials();
+  }, [user, toast]);
+
+  const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to connect Bitbucket",
+        variant: "destructive"
+      });
+      setLoading(false);
+      return;
+    }
+
     if (!clientId || !clientSecret) {
       toast({
         title: "Error",
         description: "Please provide both Client ID and Client Secret",
         variant: "destructive"
       });
+      setLoading(false);
       return;
     }
-    
-    // In a real app, we would validate these credentials with Bitbucket
-    console.log("Connecting with:", { clientId, clientSecret });
-    
-    // Simulate successful connection
-    setTimeout(() => {
-      setIsConnected(true);
+
+    try {
+      // Always try to update first
+      const { error: updateError } = await supabase
+        .from('bitbucket_credentials')
+        .update({
+          client_id: clientId,
+          client_secret: clientSecret
+        })
+        .eq('user_id', user.id);
+
+      // If no rows were updated (user doesn't have credentials yet), insert
+      if (updateError || updateError?.code === 'PGRST116') {
+        const { error: insertError } = await supabase
+          .from('bitbucket_credentials')
+          .insert({
+            user_id: user.id,
+            client_id: clientId,
+            client_secret: clientSecret
+          });
+
+        if (insertError) throw insertError;
+      }
+
       toast({
         title: "Success",
-        description: "Successfully connected to Bitbucket!",
+        description: "Bitbucket credentials saved successfully!",
       });
-    }, 1500);
-  };
-
-  const handleDisconnect = () => {
-    setIsConnected(false);
-    setClientId('');
-    setClientSecret('');
-    toast({
-      title: "Disconnected",
-      description: "Bitbucket account has been disconnected",
-    });
+    } catch (error: any) {
+      console.error('Error saving credentials:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to save Bitbucket credentials",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -62,68 +135,50 @@ const BitbucketConnect = () => {
           
           <Card className="max-w-md mx-auto">
             <CardHeader>
-              <CardTitle>{isConnected ? "Bitbucket Connection" : "Connect Your Bitbucket Account"}</CardTitle>
+              <CardTitle>Connect Your Bitbucket Account</CardTitle>
               <CardDescription>
-                {isConnected 
-                  ? "Your Bitbucket account is currently connected" 
-                  : "Provide your Bitbucket OAuth credentials to connect your account"}
+                Provide your Bitbucket OAuth credentials to connect your account
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {isConnected ? (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-green-500/20 text-green-600 p-2 rounded-full">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M20 6L9 17l-5-5"></path>
-                      </svg>
-                    </div>
-                    <span>Connected to Bitbucket</span>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">Client ID</p>
-                    <p className="font-mono text-sm bg-muted p-2 rounded">
-                      {clientId.slice(0, 4)}...{clientId.slice(-4)}
-                    </p>
-                  </div>
-                  <Button onClick={handleDisconnect} variant="destructive" className="w-full">
-                    Disconnect Account
+              <form onSubmit={handleConnect} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="clientId" className="text-sm font-medium">
+                    Client ID
+                  </label>
+                  <Input
+                    id="clientId"
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    placeholder="Enter your Bitbucket Client ID"
+                    required
+                    disabled={loading || fetching}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="clientSecret" className="text-sm font-medium">
+                    Client Secret
+                  </label>
+                  <Input
+                    id="clientSecret"
+                    value={clientSecret}
+                    onChange={(e) => setClientSecret(e.target.value)}
+                    type="password"
+                    placeholder="Enter your Bitbucket Client Secret"
+                    required
+                    disabled={loading || fetching}
+                  />
+                </div>
+                <div className="pt-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={loading || fetching}
+                  >
+                    {loading ? "Saving..." : fetching ? "Loading..." : "Save Credentials"}
                   </Button>
                 </div>
-              ) : (
-                <form onSubmit={handleConnect} className="space-y-4">
-                  <div className="space-y-2">
-                    <label htmlFor="clientId" className="text-sm font-medium">
-                      Client ID
-                    </label>
-                    <Input
-                      id="clientId"
-                      value={clientId}
-                      onChange={(e) => setClientId(e.target.value)}
-                      placeholder="Enter your Bitbucket Client ID"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="clientSecret" className="text-sm font-medium">
-                      Client Secret
-                    </label>
-                    <Input
-                      id="clientSecret"
-                      value={clientSecret}
-                      onChange={(e) => setClientSecret(e.target.value)}
-                      type="password"
-                      placeholder="Enter your Bitbucket Client Secret"
-                      required
-                    />
-                  </div>
-                  <div className="pt-2">
-                    <Button type="submit" className="w-full">
-                      Connect to Bitbucket
-                    </Button>
-                  </div>
-                </form>
-              )}
+              </form>
             </CardContent>
           </Card>
           

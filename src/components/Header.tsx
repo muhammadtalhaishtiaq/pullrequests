@@ -1,38 +1,66 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { LogoutButton } from "./LogoutButton";
 
 const Header = () => {
+  const { session } = useAuth();
+
   return (
-    <header className="border-b border-border/60 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-30">
-      <div className="container flex h-16 items-center justify-between py-4">
-        <div className="flex items-center gap-2">
-          <Link to="/" className="flex items-center">
-            <div className="bg-primary rounded-full w-8 h-8 flex items-center justify-center mr-2">
-              <span className="text-primary-foreground font-bold text-sm">PR</span>
-            </div>
-            <span className="font-semibold text-xl">PRQuality</span>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-14 items-center">
+        <div className="mr-4 hidden md:flex">
+          <Link to="/" className="mr-6 flex items-center space-x-2">
+            <span className="hidden font-bold sm:inline-block">
+              PullRequests
+            </span>
           </Link>
-          
-          <nav className="hidden md:flex items-center space-x-4 ml-6">
-            <Link to="/features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link>
-            {/* <Link to="/pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link> */}
-            <Link to="/docs" className="text-muted-foreground hover:text-foreground transition-colors">Docs</Link>
+          <nav className="flex items-center space-x-6 text-sm font-medium">
+            <Link
+              to="/features"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Features
+            </Link>
+            <Link
+              to="/pricing"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Pricing
+            </Link>
+            <Link
+              to="/docs"
+              className="transition-colors hover:text-foreground/80 text-foreground"
+            >
+              Documentation
+            </Link>
           </nav>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <Link to="/login">
-            <Button variant="ghost">Log in</Button>
-          </Link>
-          <Link to="/login">
-            <Button className="flex items-center gap-2">
-              <Github size={18} />
-              <span>Get Started</span>
-            </Button>
-          </Link>
+        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
+          <div className="w-full flex-1 md:w-auto md:flex-none">
+            {/* Add your search component here if needed */}
+          </div>
+          <nav className="flex items-center space-x-2">
+            {session ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="ghost">Dashboard</Button>
+                </Link>
+                <LogoutButton variant="ghost" />
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="ghost">Login</Button>
+                </Link>
+                <Link to="/register">
+                  <Button>Sign Up</Button>
+                </Link>
+              </>
+            )}
+          </nav>
         </div>
       </div>
     </header>

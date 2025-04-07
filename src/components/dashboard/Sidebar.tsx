@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, FileCode, Settings, LogOut, PieChart, Users, GitPullRequest, Server, Shield, Bell } from 'lucide-react';
 import { cn } from "@/lib/utils";
+import { LogoutButton } from "@/components/LogoutButton";
 
 const navItems = [
   {
@@ -15,21 +15,21 @@ const navItems = [
     href: "/dashboard/pull-requests",
     icon: GitPullRequest,
   },
-  {
-    title: "Repositories",
-    href: "/dashboard/repositories",
-    icon: FileCode,
-  },
-  {
-    title: "Team",
-    href: "/dashboard/team",
-    icon: Users,
-  },
-  {
-    title: "Analytics",
-    href: "/dashboard/analytics",
-    icon: PieChart,
-  },
+  // {
+  //   title: "Repositories",
+  //   href: "/dashboard/repositories",
+  //   icon: FileCode,
+  // },
+  // {
+  //   title: "Team",
+  //   href: "/dashboard/team",
+  //   icon: Users,
+  // },
+  // {
+  //   title: "Analytics",
+  //   href: "/dashboard/analytics",
+  //   icon: PieChart,
+  // },
   {
     title: "Integrations",
     href: "/dashboard/integrations",
@@ -40,16 +40,16 @@ const navItems = [
     href: "/dashboard/bitbucket-connect",
     icon: Server,
   },
-  {
-    title: "Security",
-    href: "/dashboard/security",
-    icon: Shield,
-  },
-  {
-    title: "Notifications",
-    href: "/dashboard/notifications",
-    icon: Bell,
-  },
+  // {
+  //   title: "Security",
+  //   href: "/dashboard/security",
+  //   icon: Shield,
+  // },
+  // {
+  //   title: "Notifications",
+  //   href: "/dashboard/notifications",
+  //   icon: Bell,
+  // },
   {
     title: "Settings",
     href: "/dashboard/settings",
@@ -93,13 +93,13 @@ const Sidebar = () => {
         </div>
 
         <div className="mt-auto pt-4">
-          <Link
-            to="/login"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+          <LogoutButton
+            className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
+            variant="ghost"
           >
             <LogOut className="h-4 w-4" />
             <span>Log out</span>
-          </Link>
+          </LogoutButton>
         </div>
       </nav>
     </div>

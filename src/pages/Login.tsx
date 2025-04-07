@@ -1,6 +1,5 @@
-
-import React from 'react';
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,18 +7,105 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from '@/lib/supabase';
+import { hashPassword, validateEmail } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { session } = useAuth();
   
-  const handleLoginSubmit = (event: React.FormEvent) => {
+  // If user is already logged in, redirect to dashboard
+  React.useEffect(() => {
+    if (session) {
+      navigate('/dashboard');
+    }
+  }, [session, navigate]);
+
+  const validateForm = (formData: FormData) => {
+    const errors: typeof formErrors = {};
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!validateEmail(email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (!password) {
+      errors.password = 'Password is required';
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleLoginSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    toast({
-      title: "Demo Mode",
-      description: "This is a demo. In a real app, you would be logged in now.",
-    });
-    // In a real app, we'd handle authentication here
-    window.location.href = "/dashboard";
+    setLoading(true);
+    
+    const form = event.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    // Validate form
+    if (!validateForm(formData)) {
+      setLoading(false);
+      return;
+    }
+
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const hashedPassword = await hashPassword(password);
+
+    try {
+      // First, check if user exists in users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', hashedPassword)
+        .single();
+
+      if (userError || !userData) {
+        throw new Error('Invalid email or password');
+      }
+
+      // Then, sign in with Supabase auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (authData?.user) {
+        toast({
+          title: "Success",
+          description: "Login successful!",
+        });
+        
+        // Redirect to the page they tried to visit or dashboard
+        const from = (location.state as any)?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "An error occurred during login",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -50,13 +136,18 @@ const Login = () => {
                     </label>
                     <Input
                       id="email"
+                      name="email"
                       placeholder="example@company.com"
                       type="email"
                       autoCapitalize="none"
                       autoComplete="email"
                       autoCorrect="off"
                       required
+                      disabled={loading}
                     />
+                    {formErrors.email && (
+                      <p className="text-sm text-red-500">{formErrors.email}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -67,9 +158,35 @@ const Login = () => {
                         Forgot password?
                       </Link>
                     </div>
-                    <Input id="password" type="password" required />
+                    <Input 
+                      id="password" 
+                      name="password"
+                      type="password" 
+                      required
+                      disabled={loading}
+                    />
+                    {formErrors.password && (
+                      <p className="text-sm text-red-500">{formErrors.password}</p>
+                    )}
                   </div>
-                  <Button type="submit" className="w-full">Sign in</Button>
+                  <div className="pt-2">
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={loading}
+                    >
+                      {loading ? "Signing in..." : "Sign In"}
+                    </Button>
+                  </div>
+                  
+                  <div className="text-center text-sm">
+                    <Link 
+                      to="/forgot-password" 
+                      className="text-primary hover:underline"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
                 </form>
               </CardContent>
             </TabsContent>

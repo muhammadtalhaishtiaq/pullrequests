@@ -55,7 +55,7 @@ const Integrations = () => {
                 </div>
               </div>
             </div>
-            
+{/*             
             <div className="border border-border rounded-lg p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-muted p-2 rounded">
@@ -74,9 +74,9 @@ const Integrations = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
             
-            <div className="border border-border rounded-lg p-4">
+            {/* <div className="border border-border rounded-lg p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-muted p-2 rounded">
                   <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -94,7 +94,7 @@ const Integrations = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </main>
       </div>
